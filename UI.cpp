@@ -350,7 +350,9 @@ ResultCode RecordingManager::loadRecording( const std::string& filename )
 		snapshot.buttonStates.resize( buttonCount );
 		for( size_t j = 0; j < buttonCount; ++j )
 		{
-			file.read( reinterpret_cast<char*>( &snapshot.buttonStates[j] ), sizeof( bool ) );
+			bool tempBool;
+			file.read( reinterpret_cast<char*>( &tempBool ), sizeof( bool ) );
+			snapshot.buttonStates[j] = tempBool;
 		}
 
 		recordedData.push_back( snapshot );
