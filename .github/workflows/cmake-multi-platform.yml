@@ -29,7 +29,7 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
       run: >
@@ -46,15 +46,35 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --build-config ${{ matrix.build_type }}
       
-    - name: Create Release and Upload Assets
-      uses: softprops/action-gh-release@v1
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: release-${{ github.run_number }}
-        name: Release ${{ github.run_number }}
+        release_name: Release ${{ github.run_number }}
         draft: false
         prerelease: false
-        files: |
-          ${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\ImGuiSDLApp.exe
-          ${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\SDL2.dll
+    
+    - name: Upload Release Asset - ImGuiSDLApp.exe
+      if: success()
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ steps.strings.outputs.build-output-dir }}/Release/ImGuiSDLApp.exe
+        asset_name: ImGuiSDLApp.exe
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Release Asset - SDL2.dll
+      if: success()
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ steps.strings.outputs.build-output-dir }}/Release/SDL2.dll
+        asset_name: SDL2.dll
+        asset_content_type: application/octet-stream
