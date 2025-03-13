@@ -4,6 +4,8 @@
 Input Test App is a comprehensive testing application for racing wheels and other gaming input devices. It provides detailed input visualization, force feedback testing, and device calibration capabilities in a user-friendly interface.
 
 **Note: This project is currently a Work In Progress (WIP)**
+## Screenshots
+![Input Test App Interface](Screenshots/Screen1.png)
 
 ## Features
 
