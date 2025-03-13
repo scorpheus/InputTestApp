@@ -1,15 +1,12 @@
 name: CMake for Windows
-
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 jobs:
   build:
     runs-on: windows-latest
-
     strategy:
       fail-fast: false
       matrix:
@@ -18,19 +15,16 @@ jobs:
         include:
           - c_compiler: cl
             cpp_compiler: cl
-
     steps:
     - uses: actions/checkout@v4
     
     - name: Checkout submodules
       run: git submodule update --init --recursive
-
     - name: Set reusable strings
       id: strings
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -38,13 +32,29 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
-
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --build-config ${{ matrix.build_type }}
+      
+    - name: Create Release Directory
+      if: success()
+      run: mkdir -p ${{ github.workspace }}/release
+      
+    - name: Copy Release Files
+      if: success()
+      run: |
+        copy ${{ steps.strings.outputs.build-output-dir }}\Release\ImGuiSDLApp.exe ${{ github.workspace }}\release\
+        copy ${{ steps.strings.outputs.build-output-dir }}\Release\SDL2.dll ${{ github.workspace }}\release\
+      
+    - name: Install 7-Zip
+      if: success()
+      run: choco install 7zip -y
+      
+    - name: Create 7z Archive
+      if: success()
+      run: 7z a -t7z ${{ github.workspace }}\ImGuiSDLApp.7z ${{ github.workspace }}\release\*
       
     - name: Create Release
       id: create_release
@@ -57,24 +67,13 @@ jobs:
         draft: false
         prerelease: false
     
-    - name: Upload Release Asset - ImGuiSDLApp.exe
+    - name: Upload Release Asset - 7z Archive
       if: success()
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.strings.outputs.build-output-dir }}/Release/ImGuiSDLApp.exe
-        asset_name: ImGuiSDLApp.exe
-        asset_content_type: application/octet-stream
-    
-    - name: Upload Release Asset - SDL2.dll
-      if: success()
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.strings.outputs.build-output-dir }}/Release/SDL2.dll
-        asset_name: SDL2.dll
-        asset_content_type: application/octet-stream
+        asset_path: ${{ github.workspace }}/ImGuiSDLApp.7z
+        asset_name: ImGuiSDLApp.7z
+        asset_content_type: application/x-7z-compressed
