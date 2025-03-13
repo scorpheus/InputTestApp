@@ -56,5 +56,5 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          ${{ steps.strings.outputs.build-output-dir }}\Release\ImGuiSDLApp.exe
-          ${{ steps.strings.outputs.build-output-dir }}\Release\SDL2.dll
+          ${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\ImGuiSDLApp.exe
+          ${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\SDL2.dll
